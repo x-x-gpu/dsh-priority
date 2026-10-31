@@ -1,0 +1,9 @@
+# 日迹：把面板和接口挂到 DSH web server 上，不另起进程、不另开端口。
+- insert:
+    - id: priority
+      name: dsh-priority
+      config:
+        # 界面与接口的路径前缀。
+        mountPrefix: /priority
+        # 数据文件。留空 = ~/.dsh/priority/tasks.json
+        dataFile: ""

@@ -1,0 +1,71 @@
+# 日迹 · dsh-priority
+
+任务挂在截止日上，每天记一笔做过什么，随时翻回过去某一天看当时的样子。
+
+这不是任务管理器。它只做一件事：**让你到截止那天，还记得自己前面做过些什么。**
+
+## 它长什么样
+
+按截止日期分组的列表，今天在最上面，逾期的排前面。每张卡片下面是你手写的过程记录，带日期，隔了两天以上会标出「· N 天没动」。
+
+顶部有日期条，可以翻回任何一天：
+
+```
+那天到期   截止日在这天的任务（当时已完成的会变灰）
+那天动过   这天的记录，右边写着那天离截止还有几天
+那天完成   这天点了完成的任务
+```
+
+今天的列表里，除了今天到期的任务，还会用虚线框显示「今天碰了后面哪件事」——点一下跳到那张卡。
+
+## 四个状态
+
+| 状态 | 含义 |
+| --- | --- |
+| open | 还没做完 |
+| done | 做完了，但还没交出去（顶部会一直挂着横幅提醒） |
+| submitted | 交出去了 |
+| dropped | 放弃了（界面上没有入口，留给助手用） |
+
+「完成」和「提交」分开，是因为写完了却没交出去这种事，忘记一次就够受的。
+
+## 它不管什么
+
+不做重要性打分，不做四象限，不做 AI 排序。日期已经把全局顺序排好了，同一天内部你自己拖一下就行。
+
+## 给助手的工具
+
+```
+priority_add            记一件事
+priority_list           按日期列出来
+priority_log            记一笔过程
+priority_unlog          删掉一条记错的记录
+priority_finish         完成（需提交的进待提交）
+priority_submit         已交
+priority_update         改标题 / 日期 / 状态
+priority_remove         删掉整条
+priority_link_session   把会话挂到任务上
+```
+
+## 装
+
+```bash
+pnpm add dsh-priority
+```
+
+或在 profile 的 `cordis.patch.yml` 里加一条：
+
+```yaml
+- insert:
+    - id: priority
+      name: dsh-priority
+      config:
+        mountPrefix: /priority
+        dataFile: ""
+```
+
+数据落在 `~/.dsh/priority/tasks.json`，一个 JSON 文件，原子写，随时可备份。
+
+## 许可
+
+MIT

@@ -1,0 +1,51 @@
+{
+  "name": "dsh-priority",
+  "version": "1.0.0",
+  "private": false,
+  "description": "日迹：任务挂在截止日上，每天记一笔做过什么，随时翻回过去某一天看当时的样子。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "lib",
+    "web",
+    "locale",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "dsh",
+    "journal",
+    "tasks",
+    "deadline",
+    "timeline"
+  ],
+  "author": {
+    "name": "Xiao"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xiao/dsh-priority.git"
+  }
+}

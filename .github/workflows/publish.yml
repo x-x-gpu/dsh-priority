@@ -1,0 +1,27 @@
+name: publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # 信任发布需要 npm 11.5.1+，runner 自带的还不够新
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      # 没有依赖，不需要 npm ci
+      - name: Publish
+        run: npm publish --provenance --access public
