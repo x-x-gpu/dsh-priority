@@ -1,6 +1,6 @@
 {
   "name": "dsh-priority",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "日迹：任务挂在截止日上，每天记一笔做过什么，随时翻回过去某一天看当时的样子。",
   "type": "module",
@@ -42,10 +42,14 @@
     "timeline"
   ],
   "author": {
-    "name": "Xiao"
+    "name": "x-x-gpu"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Xiao/dsh-priority.git"
+    "url": "git+https://github.com/x-x-gpu/dsh-priority.git"
+  },
+  "homepage": "https://github.com/x-x-gpu/dsh-priority#readme",
+  "bugs": {
+    "url": "https://github.com/x-x-gpu/dsh-priority/issues"
   }
 }

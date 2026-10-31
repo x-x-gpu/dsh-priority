@@ -1,0 +1,86 @@
+{
+  "format": 1,
+  "title": {
+    "zh": "日迹 · 插件索引",
+    "en": "Traces · plugin index"
+  },
+  "description": {
+    "zh": "个人维护的 DSH 插件索引。",
+    "en": "A small self-hosted DSH plugin index."
+  },
+  "metadata": {
+    "categories": {
+      "productivity": {
+        "title": {
+          "zh": "效率",
+          "en": "Productivity"
+        }
+      }
+    },
+    "labels": {
+      "tasks": {
+        "title": {
+          "zh": "任务",
+          "en": "Tasks"
+        }
+      },
+      "journal": {
+        "title": {
+          "zh": "记录",
+          "en": "Journal"
+        }
+      },
+      "no-ai": {
+        "title": {
+          "zh": "不含 AI",
+          "en": "No AI"
+        }
+      }
+    },
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-priority",
+      "title": {
+        "zh": "日迹",
+        "en": "Traces"
+      },
+      "description": {
+        "zh": "任务挂在截止日上，每天记一笔做过什么，随时翻回过去某一天看当时的样子。不做重要性打分，不做四象限。",
+        "en": "Tasks sit on their deadlines. One note a day about what you did, and you can flip back to any past day."
+      },
+      "metadata": {
+        "keywords": [
+          "任务",
+          "截止日",
+          "记录",
+          "日记",
+          "task",
+          "deadline",
+          "journal"
+        ],
+        "labels": [
+          "tasks",
+          "journal",
+          "no-ai"
+        ],
+        "category": "productivity",
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1793439094,
+          "source": {
+            "type": "npm",
+            "registry": "https://registry.npmjs.org"
+          },
+          "engines": {
+            "dsh": ">=0.2.0"
+          }
+        }
+      ]
+    }
+  ]
+}
