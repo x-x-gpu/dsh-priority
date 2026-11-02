@@ -17,7 +17,8 @@
     "web",
     "locale",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "icon.svg"
   ],
   "license": "MIT",
   "dsh": {
@@ -52,5 +53,6 @@
   "homepage": "https://github.com/x-x-gpu/dsh-priority#readme",
   "bugs": {
     "url": "https://github.com/x-x-gpu/dsh-priority/issues"
-  }
+  },
+  "icon": "./icon.svg"
 }
