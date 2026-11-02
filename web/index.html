@@ -153,9 +153,39 @@
     border-radius:6px;padding:2px 9px;cursor:pointer;color:#8a5f0f;margin-left:auto}
   .banner button:hover{background:#fdf6e3}
 
-  .sess{display:inline-flex;align-items:center;gap:4px;font-size:11px;border:1px solid #dde3f2;
-    background:#f5f8ff;color:#4a5f9e;border-radius:5px;padding:1px 6px;cursor:pointer}
-  .sess:hover{background:#eaf1ff}
+  .card.has-sessions{display:block;background:transparent;border:0;padding:0;box-shadow:none;margin-bottom:14px}
+  .task-face{display:flex;gap:11px;align-items:flex-start;position:relative;z-index:2;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+    box-shadow:0 2px 5px rgba(35,31,24,.055)}
+  .card.has-sessions:hover .task-face{border-color:#d8d2c6}
+  .card.has-sessions.session-over .task-face{border-color:var(--accent);background:#f0f5ff}
+  .card.has-sessions.done .task-face{background:#fbfaf7}
+  .session-links{display:flex;flex-direction:column;gap:0;min-width:0;margin:-5px 18px 0;padding:0}
+  .session-row{display:flex;align-items:stretch;position:relative;min-width:0;min-height:48px;
+    padding-top:5px;border:0;border-radius:0 0 9px 9px;background:#f0eee9;
+    box-shadow:0 1px 0 rgba(88,78,59,.1);transition:background .15s}
+  .session-row+.session-row{margin-top:-3px;padding-top:3px;background:#eeece6}
+  .session-row:hover,.session-row:focus-within{background:#e9edf5}
+  .session-row::after{content:'↗';align-self:center;margin-right:16px;color:#92979f;font-size:14px;pointer-events:none}
+  .session-open{display:flex;align-items:center;gap:11px;flex:1;min-width:0;text-align:left;border:0;
+    background:transparent;color:var(--ink);font:inherit;padding:14px 13px 10px;border-radius:0;cursor:pointer}
+  .session-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .session-mark{flex:none;width:20px;height:20px;font-size:0;color:#9299a6;display:grid;place-items:center}
+  .session-mark::before{content:'';display:block;width:12px;height:10px;border:1.3px solid currentColor;border-radius:3px;
+    clip-path:polygon(0 0,100% 0,100% 85%,35% 85%,18% 100%,18% 85%,0 85%)}
+  .session-copy{display:flex;flex-direction:column;min-width:0;gap:2px}
+  .session-title{font-size:12.5px;font-weight:500;color:#565a62;line-height:1.5;overflow-wrap:anywhere}
+  .session-meta{display:none}
+  .session-unlink{align-self:center;flex:none;margin:8px 12px 8px 0;border:1px solid transparent;background:transparent;
+    color:#8b8d93;cursor:pointer;font:inherit;font-size:11px;border-radius:5px;padding:4px 7px;white-space:nowrap;
+    opacity:0;transition:opacity .15s}
+  .session-row:hover .session-unlink,.session-row:focus-within .session-unlink{opacity:1}
+  @media(hover:none){.session-unlink{opacity:1}}
+  .session-unlink:hover{color:var(--hot);background:#fdf4f3;border-color:#e6c4c1}
+  .mount-hint{font-size:11.5px;color:var(--muted);margin:9px 0 0}
+  body.session-drag .card{border-style:dashed;border-color:#9db0e7}
+  .card.session-over{border:2px solid var(--accent);padding:10px 12px;background:#f0f5ff;box-shadow:0 0 0 3px rgba(61,99,214,.13)}
+  .card.session-over::after{content:'松开以挂载对话';position:absolute;right:10px;bottom:7px;font-size:11px;color:var(--accent)}
 
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);
     background:#2b2925;color:#f5f2ec;font-size:12px;padding:8px 16px;border-radius:8px;
@@ -195,6 +225,7 @@
   </div>
 </div>
 
+<p class="mount-hint" style="padding:0 26px;max-width:1100px;margin:12px auto 0">从左侧工作区拖动对话到日程卡片即可挂载，点击对话标题可继续会话。</p>
 <div id="list"></div>
 <div class="toast" id="toast"></div>
 
@@ -570,19 +601,54 @@ function cardEl(it, bucket, today) {
 
   main.appendChild(meta);
 
+  let sessionRows = null;
   if (Array.isArray(it.sessions) && it.sessions.length) {
+    c.classList.add("has-sessions");
     const sv = document.createElement("div");
-    sv.className = "meta";
-    sv.style.marginTop = "5px";
+    sv.className = "session-links";
     for (const sess of it.sessions) {
-      const chip = document.createElement("span");
-      chip.className = "sess";
-      chip.textContent = "会话 " + String(sess.id).slice(-6);
-      chip.title = sess.title || sess.id;
-      chip.addEventListener("click", function () { openSession(sess.id); });
-      sv.appendChild(chip);
+      const wrap = document.createElement("div");
+      wrap.className = "session-row";
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "session-open";
+      open.title = "打开对话：" + (sess.title || sess.id);
+      const mark = document.createElement("span");
+      mark.className = "session-mark";
+      mark.textContent = "↗";
+      mark.setAttribute("aria-hidden", "true");
+      open.appendChild(mark);
+      const copy = document.createElement("span");
+      copy.className = "session-copy";
+      const name = document.createElement("span");
+      name.className = "session-title";
+      name.textContent = sess.title || "会话 " + String(sess.id).slice(-6);
+      copy.appendChild(name);
+      const detail = document.createElement("span");
+      detail.className = "session-meta";
+      detail.textContent = "关联对话 · 点击继续";
+      copy.appendChild(detail);
+      open.appendChild(copy);
+      open.addEventListener("click", function () { openSession(sess.id); });
+      wrap.appendChild(open);
+      const unlink = document.createElement("button");
+      unlink.type = "button";
+      unlink.className = "session-unlink";
+      unlink.textContent = "解除挂载";
+      unlink.title = "解除挂载";
+      unlink.setAttribute("aria-label", "解除挂载：" + (sess.title || sess.id));
+      unlink.addEventListener("click", async function () {
+        unlink.disabled = true;
+        try {
+          await api("/items/" + encodeURIComponent(it.id) + "/sessions?sessionId=" + encodeURIComponent(sess.id), "DELETE");
+          await refresh();
+          toast("已解除挂载");
+        } catch (e) { unlink.disabled = false; toast(e.message, true); }
+      });
+      wrap.appendChild(unlink);
+      sv.appendChild(wrap);
     }
-    main.appendChild(sv);
+    sessionRows = sv;
   }
 
   // 过程记录
@@ -669,6 +735,13 @@ function cardEl(it, bucket, today) {
     }));
   }
   c.appendChild(acts);
+  if (sessionRows) {
+    const face = document.createElement("div");
+    face.className = "task-face";
+    while (c.firstChild) face.appendChild(c.firstChild);
+    c.appendChild(face);
+    c.appendChild(sessionRows);
+  }
 
   bindDrag(c, it, bucket);
   return c;
@@ -778,6 +851,54 @@ function mkBtn(label, fn, cls) {
   b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
   return b;
 }
+
+/* ---------- 从工作区挂载对话；与事项排序使用不同事件 ---------- */
+const SESSION_MIME = "application/x-dsh-session";
+function clearSessionDrag() {
+  document.body.classList.remove("session-drag");
+  listEl.querySelectorAll(".session-over").forEach(function (el) { el.classList.remove("session-over"); });
+}
+window.addEventListener("message", function (event) {
+  if (event.origin !== location.origin || event.source !== parent || event.data?.source !== "dsh-priority") return;
+  if (event.data.type === "pri:drag-state") {
+    clearSessionDrag();
+    document.body.classList.toggle("session-drag", event.data.active === true);
+  }
+  if (event.data.type === "pri:error") toast(String(event.data.message), true);
+});
+listEl.addEventListener("dragover", function (event) {
+  if (!Array.from(event.dataTransfer?.types || []).includes(SESSION_MIME)) return;
+  const card = event.target.closest(".card[data-id]");
+  if (!card) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+  listEl.querySelectorAll(".session-over").forEach(function (el) { if (el !== card) el.classList.remove("session-over"); });
+  document.body.classList.add("session-drag");
+  card.classList.add("session-over");
+});
+listEl.addEventListener("dragleave", function (event) {
+  const card = event.target.closest(".card[data-id]");
+  if (card && !card.contains(event.relatedTarget)) card.classList.remove("session-over");
+});
+listEl.addEventListener("drop", async function (event) {
+  if (!Array.from(event.dataTransfer?.types || []).includes(SESSION_MIME)) return;
+  const card = event.target.closest(".card[data-id]");
+  if (!card) { clearSessionDrag(); return; }
+  event.preventDefault();
+  clearSessionDrag();
+  parent.postMessage({ source: "dsh-priority", type: "pri:drag-finished" }, location.origin);
+  try {
+    const session = JSON.parse(event.dataTransfer.getData(SESSION_MIME));
+    if (typeof session.id !== "string" || !session.id.trim() || session.id.length > 256) throw new Error("无效的对话，请从左侧工作区重新拖动");
+    await api("/items/" + encodeURIComponent(card.dataset.id) + "/sessions", "POST", {
+      sessionId: session.id, title: typeof session.title === "string" ? session.title : "",
+    });
+    await refresh();
+    toast("已挂载对话，点击标题即可跳转");
+  } catch (e) { toast(e.message, true); }
+});
+window.addEventListener("dragend", clearSessionDrag);
+parent.postMessage({ source: "dsh-priority", type: "pri:ready" }, location.origin);
 
 /* ---------- 拖拽换次序（只在同一天内部） ---------- */
 let dragState = null;
