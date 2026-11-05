@@ -194,6 +194,7 @@
   .card.done .title{color:var(--text-completed)}
   .card.done .title::after{content:" 已提交";font-size:11px;color:var(--ok)}
   .card.done.pending .title::after{content:" 待提交";color:var(--warn)}
+  .card.done.plain-done .title::after{content:" 已完成";color:var(--text-completed)}
   .card.dropped{opacity:.5}
   .card.dropped .title{text-decoration:line-through;color:var(--text-completed)}
   .card.dropped .title::after{content:" 已放弃";text-decoration:none;font-size:11px;color:var(--text-completed)}
@@ -291,6 +292,13 @@
   .banner .bt{font-size:12.5px;font-weight:600;color:var(--warn-text);margin:0 0 6px}
   .banner .brow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-detail);padding:3px 0}
   .banner .brow b{color:var(--text-secondary);font-weight:600}
+  .banner.hot{border-color:var(--hot-border);background:var(--hot-soft)}
+  .banner.hot .bt{color:var(--hot)}
+  .banner button.armed{border-color:var(--hot);background:var(--hot);color:#fff}
+
+  .archive-line{margin:16px 0 40px;text-align:center;font-size:12px;color:var(--text-faint, #b3ada2);
+    cursor:pointer;padding:8px;border-radius:8px}
+  .archive-line:hover{background:var(--hover-soft, rgba(127,127,127,.08))}
   .banner button{font:inherit;font-size:11.5px;border:1px solid var(--banner-button-border);background:var(--control);
     border-radius:6px;padding:2px 9px;cursor:pointer;color:var(--warn-text);margin-left:auto}
   .banner button:hover{background:var(--warn-flag)}
@@ -401,6 +409,7 @@ const API = "api";
 let V = null;          // 最近一次 /state
 let viewDay = null;    // 正在看哪一天；null = 今天
 let D = null;          // 那一天的明细
+let showArchived = false;  // 是否展开"已交且过了截止日"的那些
 const listEl = document.getElementById("list");
 
 function toast(msg, isErr) {
@@ -575,8 +584,23 @@ function render() {
     return '<span class="' + p[0] + '" style="margin-right:6px">' + esc(p[1]) + '</span>';
   }).join("");
 
+  // 已提交、且截止日已经过去的，从列表收起（点底部那行可以再展开）
+  const archived = [];
+  for (const b of V.buckets) {
+    for (const i of b.items) {
+      if (i.status === "submitted" && i.due && String(i.due).slice(0, 10) < today) archived.push(i);
+    }
+  }
+  function isArchived(i) {
+    return i.status === "submitted" && Boolean(i.due) && String(i.due).slice(0, 10) < today;
+  }
+  function hidden(i) {
+    if (i.status === "dropped") return true;
+    return isArchived(i) && !showArchived;
+  }
+
   const visible = V.buckets.filter(function (b) {
-    const live = b.items.some(function (i) { return i.status !== "dropped"; });
+    const live = b.items.some(function (i) { return !hidden(i); });
     return live || (b.ghosts && b.ghosts.length);
   });
 
@@ -590,18 +614,38 @@ function render() {
   for (const b of V.buckets) for (const i of b.items) if (i.status === "done") pend.push(i);
   if (pend.length) {
     const bn = document.createElement("div");
-    bn.className = "banner";
+    // 放得越久越显眼：3 天以上转红
+    const oldest = Math.max.apply(null, pend.map(function (i) { return holdDays(i, today); }));
+    bn.className = "banner" + (oldest >= 3 ? " hot" : "");
     let html = '<div class="bt">' + pend.length + ' 件做完了还没交出去</div>';
     for (const i of pend) {
-      const due = i.submitDue || i.due;
+      const days = holdDays(i, today);
+      const due = i.due;
+      const late = due && String(due).slice(0, 10) < today;
       html += '<div class="brow"><b>' + esc(i.title) + '</b>'
         + '<span>' + (due ? "截止 " + String(due).slice(5).replace("-", "/") : "没有期限") + '</span>'
-        + '<button data-submit="' + esc(i.id) + '">标记已提交</button></div>';
+        + (late ? '<span style="color:var(--hot)">已过截止</span>'
+                : '<span>' + (days <= 0 ? "今天完成" : "放了 " + days + " 天") + '</span>')
+        + '<button data-submit="' + esc(i.id) + '" data-armed="0">标记已提交</button></div>';
     }
     bn.innerHTML = html;
     bn.addEventListener("click", function (e) {
-      const id = e.target.dataset && e.target.dataset.submit;
-      if (!id) return;
+      const btn = e.target.closest ? e.target.closest("button[data-submit]") : null;
+      if (!btn) return;
+      // 两步确认：这里误点一下，一条记录就从列表里消失了
+      if (btn.dataset.armed !== "1") {
+        btn.dataset.armed = "1";
+        btn.textContent = "确定交出去了？";
+        btn.classList.add("armed");
+        setTimeout(function () {
+          if (!btn.isConnected) return;
+          btn.dataset.armed = "0";
+          btn.textContent = "标记已提交";
+          btn.classList.remove("armed");
+        }, 3000);
+        return;
+      }
+      const id = btn.dataset.submit;
       api("/items/" + encodeURIComponent(id) + "/submit", "POST")
         .then(function () { return refresh(); })
         .then(function () { toast("已提交"); })
@@ -637,8 +681,9 @@ function render() {
     head.appendChild(count);
     bucketEl.appendChild(head);
 
-    const open = b.items.filter(function (i) { return i.status === "open"; });
-    const closed = b.items.filter(function (i) { return i.status !== "open"; });
+    const shown = b.items.filter(function (i) { return !hidden(i); });
+    const open = shown.filter(function (i) { return i.status === "open"; });
+    const closed = shown.filter(function (i) { return i.status !== "open"; });
 
     for (const it of open) bucketEl.appendChild(cardEl(it, b, today));
     for (const it of closed) bucketEl.appendChild(cardEl(it, b, today));
@@ -647,6 +692,19 @@ function render() {
     }
 
     listEl.appendChild(bucketEl);
+  }
+
+  if (archived.length) {
+    const line = document.createElement("div");
+    line.className = "archive-line";
+    line.textContent = showArchived
+      ? "收起这 " + archived.length + " 件已提交的"
+      : "另有 " + archived.length + " 件已提交且过了截止日 · 点这展开";
+    line.addEventListener("click", function () {
+      showArchived = !showArchived;
+      render();
+    });
+    listEl.appendChild(line);
   }
 }
 
@@ -696,7 +754,10 @@ function ghostEl(g) {
 function cardEl(it, bucket, today) {
   const c = document.createElement("div");
   const cls = ["card"];
-  if (it.status === "submitted") cls.push("done");
+  if (it.status === "submitted") {
+    cls.push("done");
+    if (!it.needsSubmit) cls.push("plain-done");   // 没有提交环节，就是做完了
+  }
   if (it.status === "done") { cls.push("done"); cls.push("pending"); }
   if (it.status === "dropped") cls.push("dropped");
   if (it.logCount) cls.push("has-log");
@@ -1181,6 +1242,14 @@ document.getElementById("btnRefresh").onclick = function () {
 };
 
 /* ---------- 加载 ---------- */
+function holdDays(it, today) {
+  const from = it.doneAt || it.submittedAt;
+  if (!from) return 0;
+  const a = Date.parse(String(from).slice(0, 10) + "T00:00:00Z");
+  const b = Date.parse(today + "T00:00:00Z");
+  return Math.round((b - a) / 86400000);
+}
+
 function isoAddDay(iso, n) {
   const t = Date.parse(iso + "T00:00:00Z");
   return new Date(t + n * 86400000).toISOString().slice(0, 10);
