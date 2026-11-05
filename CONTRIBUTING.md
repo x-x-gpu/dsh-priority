@@ -90,6 +90,29 @@ ln -s /path/to/dsh-priority dsh-priority      # Windows 用 mklink /J
 - **`done` 和 `submitted` 是两个状态**。写完但没交出去要能被提醒，所以不能合并成一个。
 - 写入是「先写临时文件再 rename」，读之前会比对文件指纹，所以手工改 JSON 也能被读到。
 
+## 分支与合并
+
+`main` 开了分支保护：**除仓库所有者外，不能直接推**。改代码请走分支 + PR。
+
+```bash
+git checkout -b feat/session-drag
+# ...改...
+git commit -am "支持拖动挂载对话"
+git push -u origin feat/session-drag
+gh pr create --fill        # 或者网页上点
+```
+
+合并由所有者做。合并方式用 squash 或 rebase 都行，别制造无意义的 merge commit。
+
+## 避免冲突
+
+几条实际经验，都是撞过的：
+
+- **动手前先 `git pull --rebase`**。
+- **`web/index.html` 是单文件，最容易撞。** 改配色、改布局这类大范围改动，先在 PR 里说一声，避免两边同时重写。
+- **改完先本地跑一遍**，别把界面改坏再提。这个插件没有自动化测试，建议至少对页面脚本跑一次 `node --check`。
+- **一次 PR 只做一件事**。「支持拖拽」和「换配色」分开提，冲突时好处理。
+
 ## 提交
 
 - 一个 PR 一件事，别混改动
